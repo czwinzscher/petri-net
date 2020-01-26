@@ -83,9 +83,50 @@ unitTests =
         isEnabled (Transition 'r') net @?= True
         isEnabled (Transition 's') net @?= False
         fire (Transition 'q') net @?= net
+        fire (Transition 's') net @?= net
         let net2 = fire (Transition 'p') net
-            expectedMarking2 =
-              Map.fromList
-                [(Place 'A', 0), (Place 'B', 1), (Place 'C', 1), (Place 'E', 1)]
-        marking net2 @?= expectedMarking2
+            net3 = fire (Transition 'q') net2
+            net4 = fire (Transition 'p') net3
+        marking net2 @?=
+          Map.fromList
+            [(Place 'A', 0), (Place 'B', 1), (Place 'C', 1), (Place 'E', 1)]
+        fireSequence "pqp" net @?= net4
+    , testCase "accepted words" $ do
+        let net =
+              PetriNet
+                { places =
+                    Set.fromList
+                      [Place 'A', Place 'B', Place 'C', Place 'D', Place 'E']
+                , transitions =
+                    Set.fromList
+                      [ Transition 'q'
+                      , Transition 'p'
+                      , Transition 'r'
+                      , Transition 's'
+                      ]
+                , flowRelations =
+                    Set.fromList
+                      [ PT (Place 'A') (Transition 'p')
+                      , PT (Place 'B') (Transition 'q')
+                      , PT (Place 'C') (Transition 'q')
+                      , PT (Place 'C') (Transition 's')
+                      , PT (Place 'D') (Transition 's')
+                      , PT (Place 'E') (Transition 'r')
+                      , TP (Transition 'p') (Place 'B')
+                      , TP (Transition 'p') (Place 'C')
+                      , TP (Transition 'q') (Place 'A')
+                      , TP (Transition 'r') (Place 'C')
+                      , TP (Transition 'r') (Place 'D')
+                      , TP (Transition 's') (Place 'E')
+                      ]
+                , marking = Map.fromList [(Place 'A', 1), (Place 'E', 1)]
+                , weights =
+                    Map.fromList
+                      [ (TP (Transition 'q') (Place 'A'), 2)
+                      , (TP (Transition 's') (Place 'E'), 2)
+                      ]
+                }
+        isAcceptedWord ['p', 'q', 'p', 'p'] net @?= True
+        isAcceptedWord ['p', 'q', 'p', 'p', 'p'] net @?= False
+        isAcceptedWord ['r', 'p', 's', 'q'] net @?= True
     ]
