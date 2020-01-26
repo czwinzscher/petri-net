@@ -161,3 +161,6 @@ fire tr net@PetriNet {..} =
                , weights = weights
                }
     else net
+
+fireSequence :: (Ord a, Ord b) => [Transition b] -> PetriNet a b -> PetriNet a b
+fireSequence trs net = foldr fire net trs
