@@ -27,7 +27,7 @@ data PetriNet a b =
     , marking :: Map.Map (Place a) Int
     , weights :: Map.Map (Edge a b) Int
     }
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
 empty :: PetriNet a b
 empty =
@@ -91,7 +91,10 @@ addFlowRelation e net@PetriNet {..} =
         }
 
 weight :: (Ord a, Ord b) => Edge a b -> PetriNet a b -> Int
-weight e net = fromMaybe 0 (Map.lookup e (weights net))
+weight e net =
+  if hasFlowRelation e net
+    then fromMaybe 1 (Map.lookup e (weights net))
+    else 0
 
 union :: (Ord a, Ord b) => PetriNet a b -> PetriNet a b -> PetriNet a b
 union p1 p2 =
@@ -127,12 +130,10 @@ isEnabled :: (Ord a, Ord b) => Transition b -> PetriNet a b -> Bool
 isEnabled tr net@PetriNet {..} =
   let valid [] = True
       valid (p:ps) =
-        case Map.lookup (PT p tr) weights of
-          Just w ->
-            case Map.lookup p marking of
+        let w = weight (PT p tr) net
+         in case Map.lookup p marking of
               Just n -> w <= n && valid ps
               Nothing -> w == 0 && valid ps
-          Nothing -> False
    in valid (Set.toList $ pre tr net)
 
 fire :: (Ord a, Ord b) => Transition b -> PetriNet a b -> PetriNet a b
@@ -145,7 +146,11 @@ fire tr net@PetriNet {..} =
                  (pre tr net)
              updatePost m =
                foldr
-                 (\p -> Map.adjust (weight (TP tr p) net +) p)
+                 (\p acc ->
+                    let w = weight (TP tr p) net
+                     in case Map.lookup p acc of
+                          Just _ -> Map.adjust (w +) p acc
+                          Nothing -> Map.insert p w acc)
                  m
                  (post tr net)
           in PetriNet
