@@ -1,0 +1,39 @@
+name:                petri-net
+version:             0.1.0.0
+github:              "czwinzscher/petri-net"
+license:             BSD3
+author:              "Clemens Zwinzscher"
+maintainer:          "example@example.com"
+copyright:           "Copyright (c) 2020 Clemens Zwinzscher"
+
+extra-source-files:
+- README.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+description:         Please see the README on GitHub at <https://github.com/czwinzscher/petri-net#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- containers
+
+ghc-options:
+  - -Wall
+
+library:
+  source-dirs: src
+
+tests:
+  petri-net-test:
+    main:                Main.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - petri-net
+    - tasty
+    - tasty-hunit
