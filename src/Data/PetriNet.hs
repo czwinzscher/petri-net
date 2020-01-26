@@ -43,27 +43,14 @@ hasPlace :: Ord a => Place a -> PetriNet a b -> Bool
 hasPlace pl net = Set.member pl (places net)
 
 addPlace :: Ord a => Place a -> PetriNet a b -> PetriNet a b
-addPlace pl PetriNet {..} =
-  PetriNet
-    { places = Set.insert pl places
-    , transitions = transitions
-    , flowRelations = flowRelations
-    , marking = marking
-    , weights = weights
-    }
+addPlace pl net@PetriNet {..} = net {places = Set.insert pl places}
 
 hasTransition :: Ord b => Transition b -> PetriNet a b -> Bool
 hasTransition tr net = Set.member tr (transitions net)
 
 addTransition :: Ord b => Transition b -> PetriNet a b -> PetriNet a b
-addTransition tr PetriNet {..} =
-  PetriNet
-    { places = places
-    , transitions = Set.insert tr transitions
-    , flowRelations = flowRelations
-    , marking = marking
-    , weights = weights
-    }
+addTransition tr net@PetriNet {..} =
+  net {transitions = Set.insert tr transitions}
 
 hasFlowRelation :: (Ord a, Ord b) => Edge a b -> PetriNet a b -> Bool
 hasFlowRelation e net = Set.member e (flowRelations net)
@@ -74,14 +61,11 @@ addFlowRelation e net@PetriNet {..} =
         case e of
           PT pl tr -> hasPlace pl net && hasTransition tr net
           TP tr pl -> hasTransition tr net && hasPlace pl net
-   in PetriNet
-        { places = places
-        , transitions = transitions
-        , flowRelations =
+   in net
+        { flowRelations =
             if allowed
               then Set.insert e flowRelations
               else flowRelations
-        , marking = marking
         , weights =
             if allowed
               then case Map.lookup e weights of
@@ -93,13 +77,7 @@ addFlowRelation e net@PetriNet {..} =
 setMarks :: (Ord a, Ord b) => Place a -> Int -> PetriNet a b -> PetriNet a b
 setMarks pl n net@PetriNet {..} =
   if hasPlace pl net
-    then PetriNet
-           { places = places
-           , transitions = transitions
-           , flowRelations = flowRelations
-           , marking = Map.insert pl n marking
-           , weights = weights
-           }
+    then net {marking = Map.insert pl n marking}
     else net
 
 marks :: (Ord a, Ord b) => a -> PetriNet a b -> Int
@@ -168,13 +146,7 @@ fire tr net@PetriNet {..} =
                           Nothing -> Map.insert p w acc)
                  m
                  (post tr net)
-          in PetriNet
-               { places = places
-               , transitions = transitions
-               , flowRelations = flowRelations
-               , marking = (updatePost . updatePre) marking
-               , weights = weights
-               }
+          in net {marking = (updatePost . updatePre) marking}
     else net
 
 fireSequence :: (Ord a, Ord b) => [b] -> PetriNet a b -> PetriNet a b
