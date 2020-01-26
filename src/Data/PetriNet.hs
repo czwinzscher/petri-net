@@ -90,6 +90,9 @@ addFlowRelation e net@PetriNet {..} =
               else weights
         }
 
+marks :: (Ord a, Ord b) => a -> PetriNet a b -> Int
+marks p net = fromMaybe 0 (Map.lookup (Place p) (marking net))
+
 weight :: (Ord a, Ord b) => Edge a b -> PetriNet a b -> Int
 weight e net =
   if hasFlowRelation e net
@@ -141,7 +144,7 @@ fire tr net@PetriNet {..} =
   if isEnabled tr net
     then let updatePre m =
                foldr
-                 (\p -> Map.adjust (weight (PT p tr) net -) p)
+                 (\p -> Map.adjust (\v -> v - weight (PT p tr) net) p)
                  m
                  (pre tr net)
              updatePost m =
@@ -162,5 +165,12 @@ fire tr net@PetriNet {..} =
                }
     else net
 
-fireSequence :: (Ord a, Ord b) => [Transition b] -> PetriNet a b -> PetriNet a b
-fireSequence trs net = foldr fire net trs
+fireSequence :: (Ord a, Ord b) => [b] -> PetriNet a b -> PetriNet a b
+fireSequence trs net = foldl (\acc t -> fire (Transition t) acc) net trs
+
+isAcceptedWord :: (Ord a, Ord b) => [b] -> PetriNet a b -> Bool
+isAcceptedWord [] _ = True
+isAcceptedWord (t:ts) net =
+  if isEnabled (Transition t) net
+    then isAcceptedWord ts (fire (Transition t) net)
+    else False
