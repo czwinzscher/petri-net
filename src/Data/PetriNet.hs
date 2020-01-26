@@ -90,6 +90,18 @@ addFlowRelation e net@PetriNet {..} =
               else weights
         }
 
+setMarks :: (Ord a, Ord b) => Place a -> Int -> PetriNet a b -> PetriNet a b
+setMarks pl n net@PetriNet {..} =
+  if hasPlace pl net
+    then PetriNet
+           { places = places
+           , transitions = transitions
+           , flowRelations = flowRelations
+           , marking = Map.insert pl n marking
+           , weights = weights
+           }
+    else net
+
 marks :: (Ord a, Ord b) => a -> PetriNet a b -> Int
 marks p net = fromMaybe 0 (Map.lookup (Place p) (marking net))
 
