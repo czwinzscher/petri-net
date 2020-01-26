@@ -61,18 +61,15 @@ addFlowRelation e net@PetriNet {..} =
         case e of
           PT pl tr -> hasPlace pl net && hasTransition tr net
           TP tr pl -> hasTransition tr net && hasPlace pl net
-   in net
-        { flowRelations =
-            if allowed
-              then Set.insert e flowRelations
-              else flowRelations
-        , weights =
-            if allowed
-              then case Map.lookup e weights of
+   in if allowed
+        then net
+               { flowRelations = Set.insert e flowRelations
+               , weights =
+                   case Map.lookup e weights of
                      Just _ -> Map.adjust (1 +) e weights
                      Nothing -> Map.insert e 1 weights
-              else weights
-        }
+               }
+        else net
 
 setMarks :: (Ord a, Ord b) => Place a -> Int -> PetriNet a b -> PetriNet a b
 setMarks pl n net@PetriNet {..} =
