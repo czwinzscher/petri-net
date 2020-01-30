@@ -6,25 +6,17 @@ import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 
-newtype Place a =
-  Place a
-  deriving (Eq, Ord, Show)
-
-newtype Transition a =
-  Transition a
-  deriving (Eq, Ord, Show)
-
 data Edge a b
-  = PT (Place a) (Transition b)
-  | TP (Transition b) (Place a)
+  = PT a b
+  | TP b a
   deriving (Eq, Ord, Show)
 
 data PetriNet a b =
   PetriNet
-    { places :: Set.Set (Place a)
-    , transitions :: Set.Set (Transition b)
+    { places :: Set.Set a
+    , transitions :: Set.Set b
     , flowRelations :: Set.Set (Edge a b)
-    , marking :: Map.Map (Place a) Int
+    , marking :: Map.Map a Int
     , weights :: Map.Map (Edge a b) Int
     }
   deriving (Eq, Ord, Show)
@@ -39,16 +31,16 @@ empty =
     , weights = Map.empty
     }
 
-hasPlace :: Ord a => Place a -> PetriNet a b -> Bool
+hasPlace :: Ord a => a -> PetriNet a b -> Bool
 hasPlace pl net = Set.member pl (places net)
 
-addPlace :: Ord a => Place a -> PetriNet a b -> PetriNet a b
+addPlace :: Ord a => a -> PetriNet a b -> PetriNet a b
 addPlace pl net@PetriNet {..} = net {places = Set.insert pl places}
 
-hasTransition :: Ord b => Transition b -> PetriNet a b -> Bool
+hasTransition :: Ord b => b -> PetriNet a b -> Bool
 hasTransition tr net = Set.member tr (transitions net)
 
-addTransition :: Ord b => Transition b -> PetriNet a b -> PetriNet a b
+addTransition :: Ord b => b -> PetriNet a b -> PetriNet a b
 addTransition tr net@PetriNet {..} =
   net {transitions = Set.insert tr transitions}
 
@@ -71,14 +63,14 @@ addFlowRelation e net@PetriNet {..} =
                }
         else net
 
-setMarks :: (Ord a, Ord b) => Place a -> Int -> PetriNet a b -> PetriNet a b
+setMarks :: (Ord a, Ord b) => a -> Int -> PetriNet a b -> PetriNet a b
 setMarks pl n net@PetriNet {..} =
   if hasPlace pl net
     then net {marking = Map.insert pl n marking}
     else net
 
 marks :: (Ord a, Ord b) => a -> PetriNet a b -> Int
-marks p net = fromMaybe 0 (Map.lookup (Place p) (marking net))
+marks p net = fromMaybe 0 (Map.lookup p (marking net))
 
 weight :: (Ord a, Ord b) => Edge a b -> PetriNet a b -> Int
 weight e net =
@@ -96,7 +88,7 @@ union p1 p2 =
     , weights = Map.unionWith (+) (weights p1) (weights p2)
     }
 
-pre :: (Ord a, Ord b) => Transition b -> PetriNet a b -> Set.Set (Place a)
+pre :: (Ord a, Ord b) => b -> PetriNet a b -> Set.Set a
 pre tr PetriNet {..} =
   foldr
     (\v acc ->
@@ -106,7 +98,7 @@ pre tr PetriNet {..} =
     Set.empty
     places
 
-post :: (Ord a, Ord b) => Transition b -> PetriNet a b -> Set.Set (Place a)
+post :: (Ord a, Ord b) => b -> PetriNet a b -> Set.Set a
 post tr PetriNet {..} =
   foldr
     (\v acc ->
@@ -116,7 +108,7 @@ post tr PetriNet {..} =
     Set.empty
     places
 
-isEnabled :: (Ord a, Ord b) => Transition b -> PetriNet a b -> Bool
+isEnabled :: (Ord a, Ord b) => b -> PetriNet a b -> Bool
 isEnabled tr net@PetriNet {..} =
   let valid [] = True
       valid (p:ps) =
@@ -126,7 +118,7 @@ isEnabled tr net@PetriNet {..} =
               Nothing -> w == 0 && valid ps
    in valid (Set.toList $ pre tr net)
 
-fire :: (Ord a, Ord b) => Transition b -> PetriNet a b -> PetriNet a b
+fire :: (Ord a, Ord b) => b -> PetriNet a b -> PetriNet a b
 fire tr net@PetriNet {..} =
   if isEnabled tr net
     then let updatePre m =
@@ -147,11 +139,8 @@ fire tr net@PetriNet {..} =
     else net
 
 fireSequence :: (Ord a, Ord b) => [b] -> PetriNet a b -> PetriNet a b
-fireSequence trs net = foldl (\acc t -> fire (Transition t) acc) net trs
+fireSequence trs net = foldl (flip fire) net trs
 
 isAcceptedWord :: (Ord a, Ord b) => [b] -> PetriNet a b -> Bool
 isAcceptedWord [] _ = True
-isAcceptedWord (t:ts) net =
-  if isEnabled (Transition t) net
-    then isAcceptedWord ts (fire (Transition t) net)
-    else False
+isAcceptedWord (t:ts) net = isEnabled t net && isAcceptedWord ts (fire t net)
