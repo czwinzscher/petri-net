@@ -116,7 +116,7 @@ isEnabled tr net@PetriNet {..} =
          in case Map.lookup p marking of
               Just n -> w <= n && valid ps
               Nothing -> w == 0 && valid ps
-   in valid (Set.toList $ pre tr net)
+   in Set.member tr transitions && valid (Set.toList $ pre tr net)
 
 fire :: (Ord a, Ord b) => b -> PetriNet a b -> PetriNet a b
 fire tr net@PetriNet {..} =
