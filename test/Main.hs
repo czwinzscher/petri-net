@@ -1,6 +1,8 @@
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.SmallCheck
 
+import Data.Bits
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -10,7 +12,7 @@ main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "PetriNet tests" [unitTests]
+tests = testGroup "PetriNet tests" [unitTests, propertyTests]
 
 unitTests :: TestTree
 unitTests =
@@ -101,4 +103,49 @@ unitTests =
         isAcceptedWord ['p', 'q', 'p', 'p'] net @?= True
         isAcceptedWord ['p', 'q', 'p', 'p', 'p'] net @?= False
         isAcceptedWord ['r', 'p', 's', 'q'] net @?= True
+    ]
+
+propertyTests :: TestTree
+propertyTests =
+  testGroup
+    "petri net property tests"
+    [ testProperty "or" $ do
+        let net =
+              PetriNet
+                { places = Set.fromList ['A', 'B', 'C']
+                , transitions = Set.fromList ['a', 'b', 'c']
+                , flowRelations =
+                    Set.fromList
+                      [ PT 'A' 'a'
+                      , PT 'A' 'a'
+                      , PT 'A' 'a'
+                      , TP 'a' 'B'
+                      , TP 'b' 'B'
+                      , TP 'b' 'C'
+                      , TP 'c' 'C'
+                      ]
+                , marking = Map.fromList [('A', 1)]
+                , weights = Map.empty
+                }
+        \t ->
+          if isAcceptedWord [t] net
+            then let net2 = fire t net
+                  in marks 'B' net2 == 1 || marks 'C' net2 == 1
+            else True
+    , testProperty "xor" $ do
+        let net =
+              PetriNet
+                { places = Set.fromList ['A', 'B', 'C']
+                , transitions = Set.fromList ['a', 'b']
+                , flowRelations =
+                    Set.fromList
+                      [PT 'A' 'a', PT 'A' 'b', TP 'a' 'B', TP 'b' 'C']
+                , marking = Map.fromList [('A', 1)]
+                , weights = Map.empty
+                }
+        \t ->
+          if isAcceptedWord [t] net
+            then let net2 = fire t net
+                  in (marks 'B' net2 == 1) `xor` (marks 'C' net2 == 1)
+            else True
     ]

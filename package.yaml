@@ -37,3 +37,5 @@ tests:
     - petri-net
     - tasty
     - tasty-hunit
+    - smallcheck
+    - tasty-smallcheck
