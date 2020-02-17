@@ -1,10 +1,11 @@
+{-# LANGUAGE OverloadedLists #-}
+
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.SmallCheck
 
 import Data.Bits
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 
 import Data.PetriNet
 
@@ -21,50 +22,48 @@ unitTests =
     [ testCase "pre / post" $ do
         let net =
               PetriNet
-                { places = Set.fromList ['A', 'B', 'C']
-                , transitions = Set.fromList ['q', 'p', 'r']
+                { places = ['A', 'B', 'C']
+                , transitions = ['q', 'p', 'r']
                 , flowRelations =
-                    Set.fromList
-                      [ PT 'A' 'p'
-                      , PT 'A' 'q'
-                      , PT 'B' 'q'
-                      , PT 'B' 'r'
-                      , TP 'p' 'B'
-                      , TP 'q' 'A'
-                      , TP 'q' 'C'
-                      , TP 'r' 'A'
-                      ]
-                , marking = Map.fromList []
-                , weights = Map.fromList []
+                    [ PT 'A' 'p'
+                    , PT 'A' 'q'
+                    , PT 'B' 'q'
+                    , PT 'B' 'r'
+                    , TP 'p' 'B'
+                    , TP 'q' 'A'
+                    , TP 'q' 'C'
+                    , TP 'r' 'A'
+                    ]
+                , marking = []
+                , weights = []
                 }
-        pre 'p' net @?= Set.fromList ['A']
-        pre 'q' net @?= Set.fromList ['A', 'B']
-        pre 'r' net @?= Set.fromList ['B']
-        post 'p' net @?= Set.fromList ['B']
-        post 'q' net @?= Set.fromList ['A', 'C']
-        post 'r' net @?= Set.fromList ['A']
+        pre 'p' net @?= ['A']
+        pre 'q' net @?= ['A', 'B']
+        pre 'r' net @?= ['B']
+        post 'p' net @?= ['B']
+        post 'q' net @?= ['A', 'C']
+        post 'r' net @?= ['A']
     , testCase "enabled transitions / fire transitions" $ do
         let net =
               PetriNet
-                { places = Set.fromList ['A', 'B', 'C', 'D', 'E']
-                , transitions = Set.fromList ['q', 'p', 'r', 's']
+                { places = ['A', 'B', 'C', 'D', 'E']
+                , transitions = ['q', 'p', 'r', 's']
                 , flowRelations =
-                    Set.fromList
-                      [ PT 'A' 'p'
-                      , PT 'B' 'q'
-                      , PT 'C' 'q'
-                      , PT 'C' 's'
-                      , PT 'D' 's'
-                      , PT 'E' 'r'
-                      , TP 'p' 'B'
-                      , TP 'p' 'C'
-                      , TP 'q' 'A'
-                      , TP 'r' 'C'
-                      , TP 'r' 'D'
-                      , TP 's' 'E'
-                      ]
-                , marking = Map.fromList [('A', 1), ('E', 1)]
-                , weights = Map.fromList [(TP 'q' 'A', 2), (TP 's' 'E', 2)]
+                    [ PT 'A' 'p'
+                    , PT 'B' 'q'
+                    , PT 'C' 'q'
+                    , PT 'C' 's'
+                    , PT 'D' 's'
+                    , PT 'E' 'r'
+                    , TP 'p' 'B'
+                    , TP 'p' 'C'
+                    , TP 'q' 'A'
+                    , TP 'r' 'C'
+                    , TP 'r' 'D'
+                    , TP 's' 'E'
+                    ]
+                , marking = [('A', 1), ('E', 1)]
+                , weights = [(TP 'q' 'A', 2), (TP 's' 'E', 2)]
                 }
         isEnabled 'p' net @?= True
         isEnabled 'q' net @?= False
@@ -75,30 +74,29 @@ unitTests =
         let net2 = fire 'p' net
             net3 = fire 'q' net2
             net4 = fire 'p' net3
-        marking net2 @?= Map.fromList [('A', 0), ('B', 1), ('C', 1), ('E', 1)]
+        marking net2 @?= [('A', 0), ('B', 1), ('C', 1), ('E', 1)]
         fireSequence "pqp" net @?= net4
     , testCase "accepted words" $ do
         let net =
               PetriNet
-                { places = Set.fromList ['A', 'B', 'C', 'D', 'E']
-                , transitions = Set.fromList ['q', 'p', 'r', 's']
+                { places = ['A', 'B', 'C', 'D', 'E']
+                , transitions = ['q', 'p', 'r', 's']
                 , flowRelations =
-                    Set.fromList
-                      [ PT 'A' 'p'
-                      , PT 'B' 'q'
-                      , PT 'C' 'q'
-                      , PT 'C' 's'
-                      , PT 'D' 's'
-                      , PT 'E' 'r'
-                      , TP 'p' 'B'
-                      , TP 'p' 'C'
-                      , TP 'q' 'A'
-                      , TP 'r' 'C'
-                      , TP 'r' 'D'
-                      , TP 's' 'E'
-                      ]
-                , marking = Map.fromList [('A', 1), ('E', 1)]
-                , weights = Map.fromList [(TP 'q' 'A', 2), (TP 's' 'E', 2)]
+                    [ PT 'A' 'p'
+                    , PT 'B' 'q'
+                    , PT 'C' 'q'
+                    , PT 'C' 's'
+                    , PT 'D' 's'
+                    , PT 'E' 'r'
+                    , TP 'p' 'B'
+                    , TP 'p' 'C'
+                    , TP 'q' 'A'
+                    , TP 'r' 'C'
+                    , TP 'r' 'D'
+                    , TP 's' 'E'
+                    ]
+                , marking = [('A', 1), ('E', 1)]
+                , weights = [(TP 'q' 'A', 2), (TP 's' 'E', 2)]
                 }
         isAcceptedWord ['p', 'q', 'p', 'p'] net @?= True
         isAcceptedWord ['p', 'q', 'p', 'p', 'p'] net @?= False
@@ -112,19 +110,18 @@ propertyTests =
     [ testProperty "or" $ do
         let net =
               PetriNet
-                { places = Set.fromList ['A', 'B', 'C']
-                , transitions = Set.fromList ['a', 'b', 'c']
+                { places = ['A', 'B', 'C']
+                , transitions = ['a', 'b', 'c']
                 , flowRelations =
-                    Set.fromList
-                      [ PT 'A' 'a'
-                      , PT 'A' 'a'
-                      , PT 'A' 'a'
-                      , TP 'a' 'B'
-                      , TP 'b' 'B'
-                      , TP 'b' 'C'
-                      , TP 'c' 'C'
-                      ]
-                , marking = Map.fromList [('A', 1)]
+                    [ PT 'A' 'a'
+                    , PT 'A' 'a'
+                    , PT 'A' 'a'
+                    , TP 'a' 'B'
+                    , TP 'b' 'B'
+                    , TP 'b' 'C'
+                    , TP 'c' 'C'
+                    ]
+                , marking = [('A', 1)]
                 , weights = Map.empty
                 }
         \t ->
@@ -135,12 +132,11 @@ propertyTests =
     , testProperty "xor" $ do
         let net =
               PetriNet
-                { places = Set.fromList ['A', 'B', 'C']
-                , transitions = Set.fromList ['a', 'b']
+                { places = ['A', 'B', 'C']
+                , transitions = ['a', 'b']
                 , flowRelations =
-                    Set.fromList
-                      [PT 'A' 'a', PT 'A' 'b', TP 'a' 'B', TP 'b' 'C']
-                , marking = Map.fromList [('A', 1)]
+                    [PT 'A' 'a', PT 'A' 'b', TP 'a' 'B', TP 'b' 'C']
+                , marking = [('A', 1)]
                 , weights = Map.empty
                 }
         \t ->
